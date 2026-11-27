@@ -97,12 +97,14 @@ export async function uploadProductImage(file: File) {
   const client = supabase;
   if (!client) throw new Error("Supabase is not configured.");
   if (!file.type.startsWith("image/")) throw new Error("Please upload an image file.");
-  if (file.size > 5 * 1024 * 1024) throw new Error("Image must be smaller than 5 MB.");
+  if (file.size > 20 * 1024 * 1024) throw new Error("Image must be smaller than 20 MB.");
   const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const path = `products/${crypto.randomUUID()}.${extension}`;
   const { error } = await client.storage.from("product-images").upload(path, file, { contentType: file.type, upsert: false });
   if (error) throw error;
-  return client.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+  const publicUrl = client.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+  if (!publicUrl) throw new Error("Photo uploaded but no public URL was returned.");
+  return publicUrl;
 }
 export async function deleteDatabaseProduct(product: Product) {
   const client = supabase;

@@ -2,11 +2,7 @@
 
 import Link from "next/link";
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
-import {
-  formatPrice,
-  products as starterProducts,
-  type Product,
-} from "@/lib/catalog";
+import { formatPrice, type Product } from "@/lib/catalog";
 import {
   deleteDatabaseProduct,
   updateDatabaseOrderStatus,
@@ -667,7 +663,7 @@ function ProductEditor({
       name: "",
       category: categories[0]?.name || "Uncategorised",
       price: 1499,
-      image: starterProducts[0].image,
+      image: "",
       colors: ["#333333"],
       sizes: ["M", "L", "XL"],
       description: "",
@@ -705,6 +701,10 @@ function ProductEditor({
     event.preventDefault();
     if (!form.name.trim()) {
       setError("Enter a product name.");
+      return;
+    }
+    if (!form.image) {
+      setError("Choose a product photo and wait for Photo uploaded before saving.");
       return;
     }
     if (!form.sizes.length) {
@@ -825,19 +825,15 @@ function ProductEditor({
                 : "Tap Choose File for camera or gallery"}
             </span>
             <span className="mt-1 block text-xs text-black/55">
-              JPG, PNG or WebP · maximum 5 MB
+              JPG, PNG or WebP · maximum 20 MB
             </span>
           </label>
           <div className="sm:col-span-2 flex items-center gap-4 border border-black/10 p-3">
-            <img
-              src={form.image}
-              alt="Product preview"
-              className="h-24 w-20 object-cover"
-            />
+            {form.image ? <img src={form.image} alt="Product preview" className="h-24 w-20 object-cover"/> : <div className="grid h-24 w-20 place-items-center bg-black/10 p-2 text-center text-[10px] font-bold text-black/45">No photo selected</div>}
             <div>
-              <b className="text-sm">Main product photo</b>
+              <b className="text-sm">{uploading ? "Uploading photo…" : form.image ? "Photo uploaded — ready to save" : "Photo required"}</b>
               <p className="mt-1 text-xs leading-5 text-black/50">
-                Choose a new photo any time to replace the current cover image.
+                New products cannot be saved with the old red default image. Select your own photo first.
               </p>
             </div>
           </div>
