@@ -2,14 +2,14 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth";
+import { hasAdminAccess, useAuth } from "@/lib/auth";
 
 export function AdminGuard({ children }: { children: React.ReactNode }) {
-  const router = useRouter(); const { user, profile, loading, configured } = useAuth();
-  useEffect(() => { if (!loading && (!user || profile?.role !== "admin")) router.replace("/admin/login"); }, [loading, user, profile, router]);
+  const router = useRouter(); const { user, profile, loading, configured } = useAuth(); const permitted = hasAdminAccess(user, profile);
+  useEffect(() => { if (!loading && !permitted) router.replace("/admin/login"); }, [loading, permitted, router]);
   if (!configured) return <AccessNotice title="Database setup required" text="Connect Supabase before the admin dashboard can be protected."/>;
   if (loading) return <main className="grid min-h-screen place-items-center bg-[#f5f2ec] text-sm font-bold">Checking admin access…</main>;
-  if (!user || profile?.role !== "admin") return <main className="grid min-h-screen place-items-center bg-[#f5f2ec] text-sm font-bold">Redirecting to login…</main>;
+  if (!permitted) return <main className="grid min-h-screen place-items-center bg-[#f5f2ec] text-sm font-bold">Redirecting to login…</main>;
   return <>{children}</>;
 }
 

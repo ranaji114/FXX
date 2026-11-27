@@ -8,6 +8,7 @@ import {
   signOut,
   signUp,
   updateProfile,
+  hasAdminAccess,
   useAuth,
   type Profile,
 } from "@/lib/auth";
@@ -40,7 +41,7 @@ function AccountContent() {
   const [busy, setBusy] = useState(false);
   const next = params.get("next") || "/shop";
   useEffect(() => {
-    if (!loading && user && profile?.role === "admin") router.replace("/admin");
+    if (!loading && hasAdminAccess(user, profile)) router.replace("/admin");
   }, [loading, user, profile, router]);
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -81,7 +82,7 @@ function AccountContent() {
         </div>
       ) : loading ? (
         <p className="p-10">Loading account…</p>
-      ) : user && profile?.role === "admin" ? (
+      ) : hasAdminAccess(user, profile) ? (
         <section className="mx-auto max-w-xl px-5 py-24 text-center">
           <p className="text-[10px] font-black uppercase tracking-[.18em] text-[#e66735]">Admin-only session</p>
           <h1 className="mt-3 text-3xl font-black">Opening admin dashboard…</h1>
