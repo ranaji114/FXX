@@ -56,6 +56,31 @@ export function StoreHeader() {
               logoUrl={settings.logoUrl}
             />
           </Link>
+          <div className="ml-auto flex items-center gap-2 lg:hidden">
+            {user ? (
+              <Link
+                href="/account"
+                className="min-h-10 border border-white/25 px-2.5 py-3 text-[9px] font-black uppercase tracking-[.1em] text-white"
+              >
+                Account
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/account?mode=login"
+                  className="min-h-10 px-1.5 py-3 text-[9px] font-black uppercase tracking-[.1em] text-white"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/account?mode=signup"
+                  className="min-h-10 border border-white/35 px-2.5 py-3 text-[9px] font-black uppercase tracking-[.1em] text-white"
+                >
+                  Sign up
+                </Link>
+              </>
+            )}
+          </div>
           <nav className="hidden items-center gap-5 text-[10px] font-black uppercase tracking-[.13em] text-white/65 lg:flex">
             <Link href="/shop">Shop all</Link>
             <Link href="/shop?category=Acid%20Wash">Acid wash</Link>

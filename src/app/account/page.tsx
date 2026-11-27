@@ -88,8 +88,8 @@ function AccountContent() {
           <h1 className="mt-3 text-3xl font-black">Opening admin dashboard…</h1>
           <p className="mt-3 text-sm text-white/60">Admin accounts do not use the customer account area.</p>
         </section>
-      ) : user && profile ? (
-        <CustomerDashboard profile={profile} />
+      ) : user ? (
+        <CustomerDashboard profile={profile || { id: user.id, full_name: String(user.user_metadata.full_name || ""), email: user.email || null, phone: null, default_address: null, role: "customer" }} />
       ) : (
         <section className="mx-auto grid max-w-5xl gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[.9fr_1.1fr] lg:py-24">
           <div>

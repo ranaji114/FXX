@@ -4,8 +4,17 @@ import type { User } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { isSupabaseEnabled, supabase } from "@/lib/supabase";
 
-export type Profile = { id: string; full_name: string | null; email: string | null; phone: string | null; default_address: string | null; role: "customer" | "admin" };
-export const hasAdminAccess = (user: User | null, profile: Profile | null) => Boolean(user && profile?.role === "admin");
+export type Profile = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  default_address: string | null;
+  role: "customer" | "admin";
+};
+const adminEmail = "forfunuse654@gmail.com";
+export const hasAdminAccess = (user: User | null, profile: Profile | null) =>
+  Boolean(user && user.email?.toLowerCase() === adminEmail && profile?.role === "admin");
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -14,15 +23,36 @@ export function useAuth() {
   useEffect(() => {
     const client = supabase;
     if (!client) return;
+    let request = 0;
     const loadProfile = async (nextUser: User | null) => {
+      const requestId = ++request;
       setUser(nextUser);
-      if (!nextUser) { setProfile(null); setLoading(false); return; }
-      // Select all fields so the customer account still loads safely while a database migration is being applied.
-      const { data } = await client.from("profiles").select("*").eq("id", nextUser.id).single();
-      setProfile(data as Profile | null); setLoading(false);
+      if (!nextUser) {
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      const profileRequest = (async () => {
+        try {
+          const { data } = await client.from("profiles").select("*").eq("id", nextUser.id).single();
+          return data as Profile | null;
+        } catch {
+          return null;
+        }
+      })();
+      const timeout = new Promise<null>((resolve) => window.setTimeout(() => resolve(null), 8000));
+      const data = await Promise.race([profileRequest, timeout]);
+      if (requestId !== request) return;
+      setProfile(data);
+      setLoading(false);
     };
-    client.auth.getUser().then(({ data }) => loadProfile(data.user));
-    const { data: listener } = client.auth.onAuthStateChange((_event, session) => { void loadProfile(session?.user ?? null); });
+    client.auth.getUser().then(({ data }) => void loadProfile(data.user)).catch(() => { setLoading(false); });
+    const { data: listener } = client.auth.onAuthStateChange(
+      (_event, session) => {
+        void loadProfile(session?.user ?? null);
+      },
+    );
     return () => listener.subscription.unsubscribe();
   }, []);
   return { user, profile, loading, configured: isSupabaseEnabled };
@@ -34,18 +64,33 @@ export async function signIn(email: string, password: string) {
   if (error) throw error;
 }
 
-export async function signUp(fullName: string, email: string, password: string) {
+export async function signUp(
+  fullName: string,
+  email: string,
+  password: string,
+) {
   if (!supabase) throw new Error("Supabase is not configured yet.");
-  const { error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName } } });
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { full_name: fullName } },
+  });
   if (error) throw error;
 }
 
-export async function signOut() { if (supabase) await supabase.auth.signOut(); }
+export async function signOut() {
+  if (supabase) await supabase.auth.signOut();
+}
 
-export async function updateProfile(profile: Pick<Profile, "full_name" | "phone" | "default_address">) {
+export async function updateProfile(
+  profile: Pick<Profile, "full_name" | "phone" | "default_address">,
+) {
   if (!supabase) throw new Error("Supabase is not configured yet.");
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) throw new Error("Please login first.");
-  const { error } = await supabase.from("profiles").update(profile).eq("id", auth.user.id);
+  const { error } = await supabase
+    .from("profiles")
+    .update(profile)
+    .eq("id", auth.user.id);
   if (error) throw error;
 }
