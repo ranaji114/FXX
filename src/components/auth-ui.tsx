@@ -21,6 +21,13 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
     }
     if (!loading && !permitted) router.replace("/admin/login");
   }, [loading, permitted, browserSession, router]);
+  useEffect(() => {
+    if (!permitted || !browserSession) return;
+    // Do not leave an admin token behind when the dashboard is closed or refreshed.
+    const endAdminSession = () => { void signOut(); };
+    window.addEventListener("pagehide", endAdminSession);
+    return () => window.removeEventListener("pagehide", endAdminSession);
+  }, [permitted, browserSession]);
   if (!configured)
     return (
       <AccessNotice
