@@ -43,7 +43,7 @@ export function useCart() {
 }
 export function useOrders() {
   const [value, setValue] = useState<CustomerOrder[]>([]);
-  useEffect(() => { const load = async () => { const local = read(orderKey, []); setValue(local); if (!supabase) return; const { data } = await supabase.from("orders").select("*, order_items(*)").order("created_at", { ascending: false }); if (data) { const next = data.map(toOrder); write(orderKey, next); setValue(next); } }; void load(); window.addEventListener("uf-change", load); return () => window.removeEventListener("uf-change", load); }, []);
+  useEffect(() => { const load = async () => { if (!supabase) { setValue(read(orderKey, [])); return; } const { data } = await supabase.from("orders").select("*, order_items(*)").order("created_at", { ascending: false }); if (data) { const next = data.map(toOrder); write(orderKey, next); setValue(next); } }; void load(); window.addEventListener("uf-change", load); return () => window.removeEventListener("uf-change", load); }, []);
   const save = async (next: CustomerOrder[]) => { write(orderKey, next); setValue(next); };
   return [value, save] as const;
 }

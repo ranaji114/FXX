@@ -4,7 +4,7 @@ import type { User } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { isSupabaseEnabled, supabase } from "@/lib/supabase";
 
-export type Profile = { id: string; full_name: string | null; email: string | null; role: "customer" | "admin" };
+export type Profile = { id: string; full_name: string | null; email: string | null; phone: string | null; default_address: string | null; role: "customer" | "admin" };
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -16,7 +16,7 @@ export function useAuth() {
     const loadProfile = async (nextUser: User | null) => {
       setUser(nextUser);
       if (!nextUser) { setProfile(null); setLoading(false); return; }
-      const { data } = await client.from("profiles").select("id, full_name, email, role").eq("id", nextUser.id).single();
+      const { data } = await client.from("profiles").select("id, full_name, email, phone, default_address, role").eq("id", nextUser.id).single();
       setProfile(data as Profile | null); setLoading(false);
     };
     client.auth.getUser().then(({ data }) => loadProfile(data.user));
@@ -39,3 +39,11 @@ export async function signUp(fullName: string, email: string, password: string) 
 }
 
 export async function signOut() { if (supabase) await supabase.auth.signOut(); }
+
+export async function updateProfile(profile: Pick<Profile, "full_name" | "phone" | "default_address">) {
+  if (!supabase) throw new Error("Supabase is not configured yet.");
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) throw new Error("Please login first.");
+  const { error } = await supabase.from("profiles").update(profile).eq("id", auth.user.id);
+  if (error) throw error;
+}

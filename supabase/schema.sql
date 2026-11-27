@@ -5,6 +5,8 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text,
   email text,
+  phone text,
+  default_address text,
   role text not null default 'customer' check (role in ('customer', 'admin')),
   created_at timestamptz not null default now()
 );
@@ -71,6 +73,9 @@ begin
   return new;
 end;
 $$;
+
+alter table public.profiles add column if not exists phone text;
+alter table public.profiles add column if not exists default_address text;
 
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
