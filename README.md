@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-Visit `http://localhost:3000` for the storefront, `http://localhost:3000/account` for customer signup/login and `http://localhost:3000/admin` for the protected admin dashboard.
+Visit `http://localhost:3000` for the storefront, `http://localhost:3000/account` for customer signup/login and `http://localhost:3000/admin/login` for the separate protected admin login.
 
 ## Included
 
@@ -25,7 +25,7 @@ Visit `http://localhost:3000` for the storefront, `http://localhost:3000/account
 
 ## One-time live setup
 
-1. Create a Supabase project. In its SQL Editor run [schema.sql](supabase/schema.sql), then [seed.sql](supabase/seed.sql). If you already ran those earlier, run [20261127_customer_profiles_and_storage.sql](supabase/migrations/20261127_customer_profiles_and_storage.sql) instead to add saved customer profiles and the secure photo bucket.
+1. Create a Supabase project. In its SQL Editor run [schema.sql](supabase/schema.sql), then [seed.sql](supabase/seed.sql). If you already ran those earlier, run [20261127_customer_profiles_and_storage.sql](supabase/migrations/20261127_customer_profiles_and_storage.sql), then [20261127_live_categories_and_realtime.sql](supabase/migrations/20261127_live_categories_and_realtime.sql). These upgrades add saved customer profiles, the secure photo bucket, admin-managed categories and instant storefront updates.
 2. Copy the project URL and anon key into `.env.local` locally and into Vercel environment variables for production. Never commit `.env.local` or share the service-role key.
 3. In Supabase Authentication → URL Configuration, add your Vercel production URL as the Site URL and Redirect URL.
 4. Create your own customer account through `/account`, then run this in Supabase SQL Editor, replacing the email with your own:

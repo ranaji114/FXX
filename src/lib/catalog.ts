@@ -1,7 +1,7 @@
 export type Product = {
   id: number;
   name: string;
-  category: "Acid Wash" | "Hoodies" | "Sweatshirts" | "Bottoms";
+  category: string;
   price: number;
   oldPrice?: number;
   image: string;
