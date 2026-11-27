@@ -1,0 +1,8 @@
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+import { StoreHeader } from "@/components/store-ui";
+import type { CustomerOrder } from "@/lib/store";
+
+export default function SuccessPage() { const [order] = useState<CustomerOrder | null>(() => { if (typeof window === "undefined") return null; try { return JSON.parse(localStorage.getItem("uf-last-order") || "null"); } catch { return null; } }); return <main className="min-h-screen bg-[#0b0b0b] text-[#f7f3eb]"><StoreHeader/><section className="mx-auto max-w-xl px-5 py-24 text-center"><div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#e66735] text-3xl">✓</div><p className="mt-7 text-[10px] font-black uppercase tracking-[.2em] text-[#e66735]">Order received</p><h1 className="mt-3 text-5xl font-black uppercase tracking-[-.07em]">You&apos;re in.</h1><p className="mx-auto mt-5 max-w-md text-sm leading-6 text-white/60">Thanks{order ? ` ${order.customer}` : ""}. We have received your order and will send an update as soon as it is packed.</p>{order && <div className="mt-9 border border-white/10 bg-white/5 p-5 text-left"><div className="flex justify-between"><span className="text-xs text-white/50">Order number</span><b>{order.id}</b></div><div className="mt-4 flex justify-between"><span className="text-xs text-white/50">Payment</span><b>{order.payment}</b></div><div className="mt-4 flex justify-between"><span className="text-xs text-white/50">Order total</span><b>₹{order.total.toLocaleString("en-IN")}</b></div></div>}<Link href="/shop" className="mt-9 inline-block bg-[#e66735] px-6 py-4 text-[10px] font-black uppercase tracking-[.14em]">Continue shopping</Link></section></main>; }
