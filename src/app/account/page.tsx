@@ -80,8 +80,6 @@ function AccountContent() {
             accounts can work.
           </p>
         </div>
-      ) : loading ? (
-        <p className="p-10">Loading account…</p>
       ) : hasAdminAccess(user, profile) ? (
         <section className="mx-auto max-w-xl px-5 py-24 text-center">
           <p className="text-[10px] font-black uppercase tracking-[.18em] text-[#e66735]">Admin-only session</p>
