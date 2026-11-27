@@ -100,8 +100,13 @@ export async function uploadProductImage(file: File) {
   if (file.size > 20 * 1024 * 1024) throw new Error("Image must be smaller than 20 MB.");
   const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const path = `products/${crypto.randomUUID()}.${extension}`;
-  const { error } = await client.storage.from("product-images").upload(path, file, { contentType: file.type, upsert: false });
-  if (error) throw error;
+  const upload = client.storage.from("product-images").upload(path, file, { contentType: file.type, upsert: false });
+  const timedOut = new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("Photo upload timed out. Please try again.")), 45000));
+  const { error } = await Promise.race([upload, timedOut]);
+  if (error) {
+    if (error.message.toLowerCase().includes("bucket not found")) throw new Error("Photo storage is not set up yet. Create the product-images bucket in Supabase first.");
+    throw error;
+  }
   const publicUrl = client.storage.from("product-images").getPublicUrl(path).data.publicUrl;
   if (!publicUrl) throw new Error("Photo uploaded but no public URL was returned.");
   return publicUrl;
