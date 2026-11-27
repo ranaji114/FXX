@@ -2,47 +2,1113 @@
 
 import Link from "next/link";
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
-import { formatPrice, products as starterProducts, type Product } from "@/lib/catalog";
-import { deleteDatabaseProduct, updateDatabaseOrderStatus, uploadProductImage, useCategories, useOrders, useProducts, useStoreSettings, type CustomerOrder, type StoreCategory, type StoreSettings } from "@/lib/store";
+import {
+  formatPrice,
+  products as starterProducts,
+  type Product,
+} from "@/lib/catalog";
+import {
+  deleteDatabaseProduct,
+  updateDatabaseOrderStatus,
+  uploadProductImage,
+  useCategories,
+  useOrders,
+  useProducts,
+  useStoreSettings,
+  type CustomerOrder,
+  type StoreCategory,
+  type StoreSettings,
+} from "@/lib/store";
 import { AdminGuard } from "@/components/auth-ui";
 import { ArrowUpRight, Plus, X } from "@/components/icons";
 
 type Tab = "Overview" | "Products" | "Categories" | "Orders" | "Brand settings";
 
-export default function AdminPage() { return <AdminGuard><Dashboard/></AdminGuard>; }
+export default function AdminPage() {
+  return (
+    <AdminGuard>
+      <Dashboard />
+    </AdminGuard>
+  );
+}
 function Dashboard() {
-  const [tab, setTab] = useState<Tab>("Overview"); const [products, saveProducts] = useProducts(); const [categories, addCategory, renameCategory, deleteCategory] = useCategories(); const [orders, saveOrders] = useOrders(); const [settings, saveSettings] = useStoreSettings(); const [editing, setEditing] = useState<Product | null>(null); const [adding, setAdding] = useState(false); const [notice, setNotice] = useState("");
-  const saveProduct = async (product: Product) => { const existing = products.some((item) => item.id === product.id); const next = existing ? products.map((item) => item.id === product.id ? product : item) : [...products, { ...product, id: Math.max(0, ...products.map((item) => item.id)) + 1 }]; try { await saveProducts(next); setEditing(null); setAdding(false); setNotice("Product saved to the live catalogue."); } catch (error) { setNotice(error instanceof Error ? error.message : "Could not save product."); } };
-  const changeStock = async (id: number, amount: number) => { try { await saveProducts(products.map((item) => item.id === id ? { ...item, stock: Math.max(0, item.stock + amount) } : item)); } catch { setNotice("Could not update stock."); } };
-  const deleteProduct = async (product: Product) => { if (!window.confirm(`Delete ${product.name}, its database record and its uploaded photo?`)) return; try { await deleteDatabaseProduct(product); await saveProducts(products.filter((item) => item.id !== product.id)); setNotice("Product and uploaded photo deleted."); } catch (error) { setNotice(error instanceof Error ? error.message : "Could not delete product."); } };
-  const changeOrder = async (id: string, status: CustomerOrder["status"]) => { try { await updateDatabaseOrderStatus(id, status); await saveOrders(orders.map((item) => item.id === id ? { ...item, status } : item)); setNotice(`Order ${id} updated.`); } catch { setNotice("Could not update order."); } };
+  const [tab, setTab] = useState<Tab>("Overview");
+  const [products, saveProducts] = useProducts();
+  const [categories, addCategory, renameCategory, deleteCategory] =
+    useCategories();
+  const [orders, saveOrders] = useOrders();
+  const [settings, saveSettings] = useStoreSettings();
+  const [editing, setEditing] = useState<Product | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [notice, setNotice] = useState("");
+  const saveProduct = async (product: Product) => {
+    const existing = products.some((item) => item.id === product.id);
+    const next = existing
+      ? products.map((item) => (item.id === product.id ? product : item))
+      : [
+          ...products,
+          {
+            ...product,
+            id: Math.max(0, ...products.map((item) => item.id)) + 1,
+          },
+        ];
+    try {
+      await saveProducts(next);
+      setEditing(null);
+      setAdding(false);
+      setNotice("Product saved to the live catalogue.");
+    } catch (error) {
+      setNotice(
+        error instanceof Error ? error.message : "Could not save product.",
+      );
+    }
+  };
+  const changeStock = async (id: number, amount: number) => {
+    try {
+      await saveProducts(
+        products.map((item) =>
+          item.id === id
+            ? { ...item, stock: Math.max(0, item.stock + amount) }
+            : item,
+        ),
+      );
+    } catch {
+      setNotice("Could not update stock.");
+    }
+  };
+  const deleteProduct = async (product: Product) => {
+    if (
+      !window.confirm(
+        `Delete ${product.name}, its database record and its uploaded photo?`,
+      )
+    )
+      return;
+    try {
+      await deleteDatabaseProduct(product);
+      await saveProducts(products.filter((item) => item.id !== product.id));
+      setNotice("Product and uploaded photo deleted.");
+    } catch (error) {
+      setNotice(
+        error instanceof Error ? error.message : "Could not delete product.",
+      );
+    }
+  };
+  const changeOrder = async (id: string, status: CustomerOrder["status"]) => {
+    try {
+      await updateDatabaseOrderStatus(id, status);
+      await saveOrders(
+        orders.map((item) => (item.id === id ? { ...item, status } : item)),
+      );
+      setNotice(`Order ${id} updated.`);
+    } catch {
+      setNotice("Could not update order.");
+    }
+  };
   const sales = orders.reduce((sum, item) => sum + item.total, 0);
-  return <main className="min-h-screen bg-[#f5f2ec] text-[#191817]"><header className="sticky top-0 z-30 border-b border-black/10 bg-[#f5f2ec]/95 backdrop-blur"><div className="mx-auto flex h-[68px] max-w-[1500px] items-center justify-between px-5 sm:px-8"><Link href="/" className="text-2xl font-black uppercase tracking-[-.09em]"><b style={{ color: settings.accent }}>{settings.brandName.slice(0, 1)}</b>{settings.brandName.slice(1)} <small className="ml-1 text-[9px] tracking-[.16em] text-black/45">ADMIN</small></Link><Link href="/" className="text-[10px] font-black uppercase tracking-[.12em] text-black/50">View store <ArrowUpRight size={13} className="inline"/></Link></div></header><div className="mx-auto grid max-w-[1500px] lg:grid-cols-[220px_1fr]"><aside className="hide-scrollbar flex overflow-x-auto border-b border-black/10 bg-[#e9e4da] p-3 lg:min-h-[calc(100vh-68px)] lg:block lg:border-b-0 lg:border-r lg:p-5">{(["Overview", "Products", "Categories", "Orders", "Brand settings"] as Tab[]).map((item) => <button key={item} onClick={() => setTab(item)} className={`mr-2 shrink-0 px-4 py-3 text-left text-xs font-bold lg:mb-1 lg:block lg:w-full ${tab === item ? "bg-[#191817] text-white" : "text-black/55"}`}>{item}{item === "Orders" && orders.length > 0 && <span className="ml-2 rounded-full bg-[#e66735] px-1.5 py-0.5 text-[9px] text-white">{orders.length}</span>}</button>)}</aside><section className="p-5 sm:p-8 lg:p-10"><div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-[10px] font-black uppercase tracking-[.16em] text-[#c95029]">FXX control centre</p><h1 className="mt-2 text-3xl font-black tracking-[-.05em] sm:text-4xl">{tab}</h1></div>{tab === "Products" && <button onClick={() => setAdding(true)} className="flex items-center gap-2 bg-[#e66735] px-4 py-3 text-[10px] font-black uppercase tracking-[.12em] text-white"><Plus size={14}/> Add product</button>}</div>{tab === "Overview" && <Overview sales={sales} products={products} orders={orders} onOrders={() => setTab("Orders")}/>} {tab === "Products" && <ProductsTable products={products} onEdit={setEditing} onDelete={deleteProduct} onStock={changeStock}/>} {tab === "Categories" && <CategoriesManager categories={categories} onAdd={addCategory} onRename={renameCategory} onDelete={deleteCategory} notify={setNotice}/>} {tab === "Orders" && <OrdersTable orders={orders} onStatus={changeOrder}/>} {tab === "Brand settings" && <Settings settings={settings} onSave={async (value) => { await saveSettings(value); setNotice("Brand settings saved."); }}/>}</section></div>{(adding || editing) && <ProductEditor product={editing} categories={categories} onClose={() => { setAdding(false); setEditing(null); }} onSave={saveProduct}/>} {notice && <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 bg-[#191817] px-5 py-3 text-sm font-semibold text-white shadow-xl">{notice}<button onClick={() => setNotice("")} className="ml-5 text-[#ff9367]">Close</button></div>}</main>;
+  return (
+    <main className="min-h-screen bg-[#f5f2ec] text-[#191817]">
+      <header className="sticky top-0 z-30 border-b border-black/10 bg-[#f5f2ec]/95 backdrop-blur">
+        <div className="mx-auto flex h-[68px] max-w-[1500px] items-center justify-between px-5 sm:px-8">
+          <Link
+            href="/"
+            className="text-2xl font-black uppercase tracking-[-.09em]"
+          >
+            <b style={{ color: settings.accent }}>
+              {settings.brandName.slice(0, 1)}
+            </b>
+            {settings.brandName.slice(1)}{" "}
+            <small className="ml-1 text-[9px] tracking-[.16em] text-black/45">
+              ADMIN
+            </small>
+          </Link>
+          <Link
+            href="/"
+            className="text-[10px] font-black uppercase tracking-[.12em] text-black/50"
+          >
+            Home / View store <ArrowUpRight size={13} className="inline" />
+          </Link>
+        </div>
+      </header>
+      <div className="mx-auto grid max-w-[1500px] lg:grid-cols-[220px_1fr]">
+        <aside className="hide-scrollbar flex overflow-x-auto border-b border-black/10 bg-[#e9e4da] p-3 lg:min-h-[calc(100vh-68px)] lg:block lg:border-b-0 lg:border-r lg:p-5">
+          {(
+            [
+              "Overview",
+              "Products",
+              "Categories",
+              "Orders",
+              "Brand settings",
+            ] as Tab[]
+          ).map((item) => (
+            <button
+              key={item}
+              onClick={() => setTab(item)}
+              className={`mr-2 shrink-0 px-4 py-3 text-left text-xs font-bold lg:mb-1 lg:block lg:w-full ${tab === item ? "bg-[#191817] text-white" : "text-black/55"}`}
+            >
+              {item}
+              {item === "Orders" && orders.length > 0 && (
+                <span className="ml-2 rounded-full bg-[#e66735] px-1.5 py-0.5 text-[9px] text-white">
+                  {orders.length}
+                </span>
+              )}
+            </button>
+          ))}
+        </aside>
+        <section className="p-5 sm:p-8 lg:p-10">
+          <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[.16em] text-[#c95029]">
+                FXX control centre
+              </p>
+              <h1 className="mt-2 text-3xl font-black tracking-[-.05em] sm:text-4xl">
+                {tab}
+              </h1>
+            </div>
+            {tab === "Products" && (
+              <button
+                onClick={() => setAdding(true)}
+                className="flex items-center gap-2 bg-[#e66735] px-4 py-3 text-[10px] font-black uppercase tracking-[.12em] text-white"
+              >
+                <Plus size={14} /> Add product
+              </button>
+            )}
+          </div>
+          {tab === "Overview" && (
+            <Overview
+              sales={sales}
+              products={products}
+              orders={orders}
+              onOrders={() => setTab("Orders")}
+            />
+          )}{" "}
+          {tab === "Products" && (
+            <ProductsTable
+              products={products}
+              onEdit={setEditing}
+              onDelete={deleteProduct}
+              onStock={changeStock}
+            />
+          )}{" "}
+          {tab === "Categories" && (
+            <CategoriesManager
+              categories={categories}
+              onAdd={addCategory}
+              onRename={renameCategory}
+              onDelete={deleteCategory}
+              notify={setNotice}
+            />
+          )}{" "}
+          {tab === "Orders" && (
+            <OrdersTable orders={orders} onStatus={changeOrder} />
+          )}{" "}
+          {tab === "Brand settings" && (
+            <Settings
+              settings={settings}
+              onSave={async (value) => {
+                await saveSettings(value);
+                setNotice("Brand settings saved.");
+              }}
+            />
+          )}
+        </section>
+      </div>
+      {(adding || editing) && (
+        <ProductEditor
+          product={editing}
+          categories={categories}
+          onClose={() => {
+            setAdding(false);
+            setEditing(null);
+          }}
+          onSave={saveProduct}
+        />
+      )}{" "}
+      {notice && (
+        <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 bg-[#191817] px-5 py-3 text-sm font-semibold text-white shadow-xl">
+          {notice}
+          <button onClick={() => setNotice("")} className="ml-5 text-[#ff9367]">
+            Close
+          </button>
+        </div>
+      )}
+    </main>
+  );
 }
 
-function Overview({ sales, products, orders, onOrders }: { sales: number; products: Product[]; orders: CustomerOrder[]; onOrders: () => void }) { return <><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Metric label="Sales" value={formatPrice(sales)} detail="From online customer orders"/><Metric label="Orders" value={String(orders.length)} detail="Customer orders received"/><Metric label="Products" value={String(products.length)} detail="Visible in the shop"/><Metric label="Low stock" value={String(products.filter((item) => item.stock < 6).length)} detail="Below 6 pieces"/></div><div className="mt-7 grid gap-6 lg:grid-cols-[1.25fr_.75fr]"><div className="border border-black/10 bg-white p-6"><h2 className="text-lg font-black">Admin and customer areas are separate</h2><div className="mt-5 grid gap-3 sm:grid-cols-3"><Info title="Products" text="Upload photos, add prices, descriptions and stock."/><Info title="Orders" text="Customer address, phone and delivery status in one place."/><Info title="Brand" text="Change FXX name, logo and accent colour."/></div></div><div className="bg-[#191817] p-6 text-white"><p className="text-[10px] font-black uppercase tracking-[.15em] text-white/45">Customer activity</p><p className="mt-3 text-2xl font-black">{orders.length ? `${orders.length} orders to manage` : "No orders yet"}</p><button onClick={onOrders} className="mt-6 text-[10px] font-black uppercase tracking-[.12em] text-[#ff9367]">Open orders →</button></div></div></>; }
+function Overview({
+  sales,
+  products,
+  orders,
+  onOrders,
+}: {
+  sales: number;
+  products: Product[];
+  orders: CustomerOrder[];
+  onOrders: () => void;
+}) {
+  return (
+    <>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Metric
+          label="Sales"
+          value={formatPrice(sales)}
+          detail="From online customer orders"
+        />
+        <Metric
+          label="Orders"
+          value={String(orders.length)}
+          detail="Customer orders received"
+        />
+        <Metric
+          label="Products"
+          value={String(products.length)}
+          detail="Visible in the shop"
+        />
+        <Metric
+          label="Low stock"
+          value={String(products.filter((item) => item.stock < 6).length)}
+          detail="Below 6 pieces"
+        />
+      </div>
+      <div className="mt-7 grid gap-6 lg:grid-cols-[1.25fr_.75fr]">
+        <div className="border border-black/10 bg-white p-6">
+          <h2 className="text-lg font-black">
+            Admin and customer areas are separate
+          </h2>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <Info
+              title="Products"
+              text="Upload photos, add prices, descriptions and stock."
+            />
+            <Info
+              title="Orders"
+              text="Customer address, phone and delivery status in one place."
+            />
+            <Info
+              title="Brand"
+              text="Change FXX name, logo and accent colour."
+            />
+          </div>
+        </div>
+        <div className="bg-[#191817] p-6 text-white">
+          <p className="text-[10px] font-black uppercase tracking-[.15em] text-white/45">
+            Customer activity
+          </p>
+          <p className="mt-3 text-2xl font-black">
+            {orders.length
+              ? `${orders.length} orders to manage`
+              : "No orders yet"}
+          </p>
+          <button
+            onClick={onOrders}
+            className="mt-6 text-[10px] font-black uppercase tracking-[.12em] text-[#ff9367]"
+          >
+            Open orders →
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
 
-function ProductsTable({ products, onEdit, onDelete, onStock }: { products: Product[]; onEdit: (product: Product) => void; onDelete: (product: Product) => void; onStock: (id: number, amount: number) => void }) { const [query, setQuery] = useState(""); const shown = useMemo(() => products.filter((item) => item.name.toLowerCase().includes(query.toLowerCase())), [products, query]); return <div className="border border-black/10 bg-white"><div className="flex flex-col gap-3 border-b border-black/10 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"><b className="text-sm">{shown.length} live products</b><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search products" className="min-h-11 w-full border border-black/15 px-3 py-2 text-sm sm:w-auto"/></div><div className="divide-y divide-black/10 md:hidden">{shown.map((product) => <article key={product.id} className="p-4"><div className="flex gap-3"><img src={product.image} alt="" className="h-20 w-16 object-cover"/><div className="min-w-0 flex-1"><b className="block truncate text-sm">{product.name}</b><p className="mt-1 text-[10px] font-black uppercase tracking-[.1em] text-black/45">{product.category}</p><p className="mt-2 text-sm font-black">{formatPrice(product.price)}</p></div><span className={`h-fit rounded-full px-2 py-1 text-[9px] font-black uppercase ${product.stock ? "bg-[#e5f0e4] text-[#487742]" : "bg-[#f8ded6] text-[#b64322]"}`}>{product.stock ? "Active" : "Sold out"}</span></div><div className="mt-4 flex items-center justify-between gap-3"><div className="flex items-center border border-black/20"><button onClick={() => onStock(product.id, -1)} className="grid h-11 w-11 place-items-center">−</button><b className="grid h-11 min-w-10 place-items-center text-sm">{product.stock}</b><button onClick={() => onStock(product.id, 1)} className="grid h-11 w-11 place-items-center">+</button></div><div className="flex gap-4"><button onClick={() => onEdit(product)} className="min-h-11 text-[10px] font-black uppercase tracking-[.1em] text-[#c95029]">Edit</button><button onClick={() => onDelete(product)} className="min-h-11 text-[10px] font-black uppercase tracking-[.1em] text-black/45">Delete</button></div></div></article>)}</div><div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[720px] text-left"><thead className="bg-[#f5f2ec] text-[10px] font-black uppercase tracking-[.12em] text-black/45"><tr><th className="p-4">Product</th><th className="p-4">Price</th><th className="p-4">Stock</th><th className="p-4">Status</th><th className="p-4"/></tr></thead><tbody>{shown.map((product) => <tr key={product.id} className="border-t border-black/10"><td className="p-4"><div className="flex items-center gap-3"><img src={product.image} alt="" className="h-12 w-10 object-cover"/><div><b className="text-sm">{product.name}</b><p className="mt-1 text-[10px] font-black uppercase tracking-[.1em] text-black/45">{product.category}</p></div></div></td><td className="p-4 font-bold">{formatPrice(product.price)}</td><td className="p-4"><div className="flex items-center gap-2"><button onClick={() => onStock(product.id, -1)} className="h-8 w-8 border border-black/20">−</button><b>{product.stock}</b><button onClick={() => onStock(product.id, 1)} className="h-8 w-8 border border-black/20">+</button></div></td><td className="p-4"><span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase ${product.stock ? "bg-[#e5f0e4] text-[#487742]" : "bg-[#f8ded6] text-[#b64322]"}`}>{product.stock ? "Active" : "Sold out"}</span></td><td className="p-4 text-right"><button onClick={() => onEdit(product)} className="text-[10px] font-black uppercase tracking-[.1em] text-[#c95029]">Edit</button><button onClick={() => onDelete(product)} className="ml-4 text-[10px] font-black uppercase tracking-[.1em] text-black/35">Delete</button></td></tr>)}</tbody></table></div></div>; }
+function ProductsTable({
+  products,
+  onEdit,
+  onDelete,
+  onStock,
+}: {
+  products: Product[];
+  onEdit: (product: Product) => void;
+  onDelete: (product: Product) => void;
+  onStock: (id: number, amount: number) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const shown = useMemo(
+    () =>
+      products.filter((item) =>
+        item.name.toLowerCase().includes(query.toLowerCase()),
+      ),
+    [products, query],
+  );
+  return (
+    <div className="border border-black/10 bg-white">
+      <div className="flex flex-col gap-3 border-b border-black/10 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <b className="text-sm">{shown.length} live products</b>
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search products"
+          className="min-h-11 w-full border border-black/15 px-3 py-2 text-sm sm:w-auto"
+        />
+      </div>
+      <div className="divide-y divide-black/10 md:hidden">
+        {shown.map((product) => (
+          <article key={product.id} className="p-4">
+            <div className="flex gap-3">
+              <img
+                src={product.image}
+                alt=""
+                className="h-20 w-16 object-cover"
+              />
+              <div className="min-w-0 flex-1">
+                <b className="block truncate text-sm">{product.name}</b>
+                <p className="mt-1 text-[10px] font-black uppercase tracking-[.1em] text-black/45">
+                  {product.category}
+                </p>
+                <p className="mt-2 text-sm font-black">
+                  {formatPrice(product.price)}
+                </p>
+              </div>
+              <span
+                className={`h-fit rounded-full px-2 py-1 text-[9px] font-black uppercase ${product.stock ? "bg-[#e5f0e4] text-[#487742]" : "bg-[#f8ded6] text-[#b64322]"}`}
+              >
+                {product.stock ? "Active" : "Sold out"}
+              </span>
+            </div>
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <div className="flex items-center border border-black/20">
+                <button
+                  onClick={() => onStock(product.id, -1)}
+                  className="grid h-11 w-11 place-items-center"
+                >
+                  −
+                </button>
+                <b className="grid h-11 min-w-10 place-items-center text-sm">
+                  {product.stock}
+                </b>
+                <button
+                  onClick={() => onStock(product.id, 1)}
+                  className="grid h-11 w-11 place-items-center"
+                >
+                  +
+                </button>
+              </div>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => onEdit(product)}
+                  className="min-h-11 text-[10px] font-black uppercase tracking-[.1em] text-[#c95029]"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => onDelete(product)}
+                  className="min-h-11 text-[10px] font-black uppercase tracking-[.1em] text-black/45"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full min-w-[720px] text-left">
+          <thead className="bg-[#f5f2ec] text-[10px] font-black uppercase tracking-[.12em] text-black/45">
+            <tr>
+              <th className="p-4">Product</th>
+              <th className="p-4">Price</th>
+              <th className="p-4">Stock</th>
+              <th className="p-4">Status</th>
+              <th className="p-4" />
+            </tr>
+          </thead>
+          <tbody>
+            {shown.map((product) => (
+              <tr key={product.id} className="border-t border-black/10">
+                <td className="p-4">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={product.image}
+                      alt=""
+                      className="h-12 w-10 object-cover"
+                    />
+                    <div>
+                      <b className="text-sm">{product.name}</b>
+                      <p className="mt-1 text-[10px] font-black uppercase tracking-[.1em] text-black/45">
+                        {product.category}
+                      </p>
+                    </div>
+                  </div>
+                </td>
+                <td className="p-4 font-bold">{formatPrice(product.price)}</td>
+                <td className="p-4">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => onStock(product.id, -1)}
+                      className="h-8 w-8 border border-black/20"
+                    >
+                      −
+                    </button>
+                    <b>{product.stock}</b>
+                    <button
+                      onClick={() => onStock(product.id, 1)}
+                      className="h-8 w-8 border border-black/20"
+                    >
+                      +
+                    </button>
+                  </div>
+                </td>
+                <td className="p-4">
+                  <span
+                    className={`rounded-full px-2 py-1 text-[9px] font-black uppercase ${product.stock ? "bg-[#e5f0e4] text-[#487742]" : "bg-[#f8ded6] text-[#b64322]"}`}
+                  >
+                    {product.stock ? "Active" : "Sold out"}
+                  </span>
+                </td>
+                <td className="p-4 text-right">
+                  <button
+                    onClick={() => onEdit(product)}
+                    className="text-[10px] font-black uppercase tracking-[.1em] text-[#c95029]"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => onDelete(product)}
+                    className="ml-4 text-[10px] font-black uppercase tracking-[.1em] text-black/35"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
-function OrdersTable({ orders, onStatus }: { orders: CustomerOrder[]; onStatus: (id: string, status: CustomerOrder["status"]) => void }) { return <div className="border border-black/10 bg-white">{orders.length === 0 ? <div className="p-10 text-center sm:p-14"><b>No customer orders yet.</b><p className="mt-2 text-sm text-black/50">Orders will appear here after checkout.</p></div> : <><div className="divide-y divide-black/10 md:hidden">{orders.map((order) => <article key={order.id} className="p-4"><div className="flex items-start justify-between gap-3"><div><b className="text-sm">{order.id}</b><p className="mt-1 text-[10px] text-black/45">{order.createdAt}</p></div><b className="text-sm">{formatPrice(order.total)}</b></div><div className="mt-4 grid gap-2 text-xs"><p><b>{order.customer}</b> · {order.phone}</p><p className="text-black/55">{order.address}</p></div><select value={order.status} onChange={(event) => onStatus(order.id, event.target.value as CustomerOrder["status"])} className="mt-4 min-h-11 w-full border border-black/20 bg-white px-3 text-sm font-bold"><option>New</option><option>Processing</option><option>Shipped</option><option>Delivered</option></select></article>)}</div><div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[760px] text-left"><thead className="bg-[#f5f2ec] text-[10px] font-black uppercase tracking-[.12em] text-black/45"><tr><th className="p-4">Order</th><th className="p-4">Customer</th><th className="p-4">Delivery information</th><th className="p-4">Total</th><th className="p-4">Status</th></tr></thead><tbody>{orders.map((order) => <tr key={order.id} className="border-t border-black/10"><td className="p-4"><b>{order.id}</b><p className="mt-1 text-[10px] text-black/45">{order.createdAt}</p></td><td className="p-4"><b className="text-sm">{order.customer}</b><p className="mt-1 text-xs text-black/50">{order.phone}</p></td><td className="p-4 max-w-[230px] text-xs text-black/60">{order.address}</td><td className="p-4 font-black">{formatPrice(order.total)}</td><td className="p-4"><select value={order.status} onChange={(event) => onStatus(order.id, event.target.value as CustomerOrder["status"])} className="min-h-10 border border-black/20 bg-white p-2 text-xs font-bold"><option>New</option><option>Processing</option><option>Shipped</option><option>Delivered</option></select></td></tr>)}</tbody></table></div></>}</div>; }
+function OrdersTable({
+  orders,
+  onStatus,
+}: {
+  orders: CustomerOrder[];
+  onStatus: (id: string, status: CustomerOrder["status"]) => void;
+}) {
+  return (
+    <div className="border border-black/10 bg-white">
+      {orders.length === 0 ? (
+        <div className="p-10 text-center sm:p-14">
+          <b>No customer orders yet.</b>
+          <p className="mt-2 text-sm text-black/50">
+            Orders will appear here after checkout.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="divide-y divide-black/10 md:hidden">
+            {orders.map((order) => (
+              <article key={order.id} className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <b className="text-sm">{order.id}</b>
+                    <p className="mt-1 text-[10px] text-black/45">
+                      {order.createdAt}
+                    </p>
+                  </div>
+                  <b className="text-sm">{formatPrice(order.total)}</b>
+                </div>
+                <div className="mt-4 grid gap-2 text-xs">
+                  <p>
+                    <b>{order.customer}</b> · {order.phone}
+                  </p>
+                  <p className="text-black/55">{order.address}</p>
+                </div>
+                <select
+                  value={order.status}
+                  onChange={(event) =>
+                    onStatus(
+                      order.id,
+                      event.target.value as CustomerOrder["status"],
+                    )
+                  }
+                  className="mt-4 min-h-11 w-full border border-black/20 bg-white px-3 text-sm font-bold"
+                >
+                  <option>New</option>
+                  <option>Processing</option>
+                  <option>Shipped</option>
+                  <option>Delivered</option>
+                </select>
+              </article>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full min-w-[760px] text-left">
+              <thead className="bg-[#f5f2ec] text-[10px] font-black uppercase tracking-[.12em] text-black/45">
+                <tr>
+                  <th className="p-4">Order</th>
+                  <th className="p-4">Customer</th>
+                  <th className="p-4">Delivery information</th>
+                  <th className="p-4">Total</th>
+                  <th className="p-4">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((order) => (
+                  <tr key={order.id} className="border-t border-black/10">
+                    <td className="p-4">
+                      <b>{order.id}</b>
+                      <p className="mt-1 text-[10px] text-black/45">
+                        {order.createdAt}
+                      </p>
+                    </td>
+                    <td className="p-4">
+                      <b className="text-sm">{order.customer}</b>
+                      <p className="mt-1 text-xs text-black/50">
+                        {order.phone}
+                      </p>
+                    </td>
+                    <td className="p-4 max-w-[230px] text-xs text-black/60">
+                      {order.address}
+                    </td>
+                    <td className="p-4 font-black">
+                      {formatPrice(order.total)}
+                    </td>
+                    <td className="p-4">
+                      <select
+                        value={order.status}
+                        onChange={(event) =>
+                          onStatus(
+                            order.id,
+                            event.target.value as CustomerOrder["status"],
+                          )
+                        }
+                        className="min-h-10 border border-black/20 bg-white p-2 text-xs font-bold"
+                      >
+                        <option>New</option>
+                        <option>Processing</option>
+                        <option>Shipped</option>
+                        <option>Delivered</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
-function Settings({ settings, onSave }: { settings: StoreSettings; onSave: (settings: StoreSettings) => Promise<void> }) { const [form, setForm] = useState(settings); const submit = async (event: FormEvent) => { event.preventDefault(); await onSave(form); }; return <form onSubmit={submit} className="max-w-2xl space-y-6"><section className="border border-black/10 bg-white p-6"><p className="text-[10px] font-black uppercase tracking-[.15em] text-[#c95029]">Store identity</p><h2 className="mt-2 text-xl font-black">Brand name and logo</h2><div className="mt-6 grid gap-4"><Input label="Website name" value={form.brandName} onChange={(value) => setForm({ ...form, brandName: value })}/><Input label="Logo image URL" value={form.logoUrl} onChange={(value) => setForm({ ...form, logoUrl: value })}/><label className="text-xs font-bold">Accent colour<input type="color" value={form.accent} onChange={(event) => setForm({ ...form, accent: event.target.value })} className="ml-4 h-8 w-14 align-middle"/></label></div></section><section className="border border-black/10 bg-white p-6"><h2 className="font-black">Product photo bucket</h2><p className="mt-2 text-sm leading-6 text-black/55">Admins upload product photos directly from the product editor. They are stored in the secure `product-images` Supabase Storage bucket.</p></section><button className="bg-[#e66735] px-5 py-3 text-[10px] font-black uppercase tracking-[.12em] text-white">Save brand settings</button></form>; }
+function Settings({
+  settings,
+  onSave,
+}: {
+  settings: StoreSettings;
+  onSave: (settings: StoreSettings) => Promise<void>;
+}) {
+  const [form, setForm] = useState(settings);
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    await onSave(form);
+  };
+  return (
+    <form onSubmit={submit} className="max-w-2xl space-y-6">
+      <section className="border border-black/10 bg-white p-6">
+        <p className="text-[10px] font-black uppercase tracking-[.15em] text-[#c95029]">
+          Store identity
+        </p>
+        <h2 className="mt-2 text-xl font-black">Brand name and logo</h2>
+        <div className="mt-6 grid gap-4">
+          <Input
+            label="Website name"
+            value={form.brandName}
+            onChange={(value) => setForm({ ...form, brandName: value })}
+          />
+          <Input
+            label="Logo image URL"
+            value={form.logoUrl}
+            onChange={(value) => setForm({ ...form, logoUrl: value })}
+          />
+          <label className="text-xs font-bold">
+            Accent colour
+            <input
+              type="color"
+              value={form.accent}
+              onChange={(event) =>
+                setForm({ ...form, accent: event.target.value })
+              }
+              className="ml-4 h-8 w-14 align-middle"
+            />
+          </label>
+        </div>
+      </section>
+      <section className="border border-black/10 bg-white p-6">
+        <h2 className="font-black">Product photo bucket</h2>
+        <p className="mt-2 text-sm leading-6 text-black/55">
+          Admins upload product photos directly from the product editor. They
+          are stored in the secure `product-images` Supabase Storage bucket.
+        </p>
+      </section>
+      <button className="bg-[#e66735] px-5 py-3 text-[10px] font-black uppercase tracking-[.12em] text-white">
+        Save brand settings
+      </button>
+    </form>
+  );
+}
 
-function ProductEditor({ product, categories, onClose, onSave }: { product: Product | null; categories: StoreCategory[]; onClose: () => void; onSave: (product: Product) => Promise<void> }) {
-  const [form, setForm] = useState<Product>(product || { id: 0, name: "", category: categories[0]?.name || "Uncategorised", price: 1499, image: starterProducts[0].image, colors: ["#333333"], sizes: ["M", "L", "XL"], description: "", stock: 10 });
-  const [uploading, setUploading] = useState(false); const [error, setError] = useState("");
-  const chooseFile = async (event: ChangeEvent<HTMLInputElement>) => { const file = event.target.files?.[0]; if (!file) return; setUploading(true); setError(""); try { const image = await uploadProductImage(file); setForm((current) => ({ ...current, image })); } catch (uploadError) { setError(uploadError instanceof Error ? uploadError.message : "Photo upload failed. Please try again."); } finally { setUploading(false); event.target.value = ""; } };
-  const splitList = (value: string) => value.split(",").map((item) => item.trim()).filter(Boolean);
+function ProductEditor({
+  product,
+  categories,
+  onClose,
+  onSave,
+}: {
+  product: Product | null;
+  categories: StoreCategory[];
+  onClose: () => void;
+  onSave: (product: Product) => Promise<void>;
+}) {
+  const [form, setForm] = useState<Product>(
+    product || {
+      id: 0,
+      name: "",
+      category: categories[0]?.name || "Uncategorised",
+      price: 1499,
+      image: starterProducts[0].image,
+      colors: ["#333333"],
+      sizes: ["M", "L", "XL"],
+      description: "",
+      stock: 10,
+    },
+  );
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+  const chooseFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setError("");
+    try {
+      const image = await uploadProductImage(file);
+      setForm((current) => ({ ...current, image }));
+    } catch (uploadError) {
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Photo upload failed. Please try again.",
+      );
+    } finally {
+      setUploading(false);
+      event.target.value = "";
+    }
+  };
+  const splitList = (value: string) =>
+    value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
   const details = form.details || [];
-  const submit = async (event: FormEvent) => { event.preventDefault(); if (!form.name.trim()) { setError("Enter a product name."); return; } if (!form.sizes.length) { setError("Add at least one size."); return; } await onSave(form); };
-  return <div className="fixed inset-0 z-50 grid items-end bg-black/60 p-0 sm:place-items-center sm:p-4"><form onSubmit={submit} className="max-h-[92dvh] w-full max-w-xl overflow-auto rounded-t-2xl bg-[#f5f2ec] p-5 shadow-xl sm:rounded-none sm:p-6"><div className="flex items-center justify-between"><div><p className="text-[10px] font-black uppercase tracking-[.14em] text-[#c95029]">Phone product editor</p><h2 className="mt-1 text-xl font-black">{product ? "Edit product" : "Add product"}</h2></div><button aria-label="Close editor" type="button" onClick={onClose} className="grid h-11 w-11 place-items-center"><X/></button></div><div className="mt-5 grid gap-4 sm:grid-cols-2"><Input label="Product name" value={form.name} onChange={(value) => setForm({ ...form, name: value })}/><Input label="Badge (optional)" value={form.badge || ""} onChange={(value) => setForm({ ...form, badge: value || undefined })}/><Input label="Selling price (₹)" value={String(form.price)} type="number" onChange={(value) => setForm({ ...form, price: Number(value) || 0 })}/><Input label="Original price (optional)" value={form.oldPrice ? String(form.oldPrice) : ""} type="number" onChange={(value) => setForm({ ...form, oldPrice: value ? Number(value) : undefined })}/><Input label="Stock pieces" value={String(form.stock)} type="number" onChange={(value) => setForm({ ...form, stock: Math.max(0, Number(value) || 0) })}/><label className="text-xs font-bold">Category<select value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} className="mt-2 min-h-12 w-full border border-black/20 bg-white p-3 text-base font-normal">{categories.map((category) => <option key={category.id}>{category.name}</option>)}{!categories.length && <option>Uncategorised</option>}</select></label><label className="text-xs font-bold">Sizes (comma separated)<input value={form.sizes.join(", ")} onChange={(event) => setForm({ ...form, sizes: splitList(event.target.value) })} placeholder="S, M, L, XL" className="mt-2 min-h-12 w-full border border-black/20 bg-white p-3 text-base font-normal"/></label><label className="text-xs font-bold">Colours (comma separated)<input value={form.colors.join(", ")} onChange={(event) => setForm({ ...form, colors: splitList(event.target.value) })} placeholder="#111111, Black" className="mt-2 min-h-12 w-full border border-black/20 bg-white p-3 text-base font-normal"/></label><label className="sm:col-span-2 cursor-pointer border-2 border-dashed border-[#c95029]/40 bg-[#fff7f3] p-4 text-center"><input onChange={chooseFile} accept="image/*" type="file" className="sr-only"/><b className="block text-sm">{uploading ? "Uploading product photo…" : "Tap to take a photo or choose from gallery"}</b><span className="mt-1 block text-xs text-black/55">JPG, PNG or WebP · maximum 5 MB</span></label><div className="sm:col-span-2 flex items-center gap-4 border border-black/10 p-3"><img src={form.image} alt="Product preview" className="h-24 w-20 object-cover"/><div><b className="text-sm">Main product photo</b><p className="mt-1 text-xs leading-5 text-black/50">Choose a new photo any time to replace the current cover image.</p></div></div><label className="sm:col-span-2 text-xs font-bold">Description<textarea required value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Fabric, fit, wash and print details…" className="mt-2 h-28 w-full border border-black/20 bg-white p-3 text-base font-normal"/></label><CustomDetailsEditor details={details} onChange={(next) => setForm({ ...form, details: next })}/></div>{error && <p className="mt-4 text-sm font-bold text-[#c95029]">{error}</p>}<button disabled={uploading} className="sticky bottom-0 mt-6 min-h-13 w-full bg-[#e66735] px-5 py-4 text-[10px] font-black uppercase tracking-[.12em] text-white shadow-[0_-8px_18px_rgba(245,242,236,.9)] disabled:opacity-50">{uploading ? "Uploading…" : "Save product to live store"}</button></form></div>;
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!form.name.trim()) {
+      setError("Enter a product name.");
+      return;
+    }
+    if (!form.sizes.length) {
+      setError("Add at least one size.");
+      return;
+    }
+    await onSave(form);
+  };
+  return (
+    <div className="fixed inset-0 z-50 grid items-end bg-black/60 p-0 sm:place-items-center sm:p-4">
+      <form
+        onSubmit={submit}
+        className="max-h-[92dvh] w-full max-w-xl overflow-auto rounded-t-2xl bg-[#f5f2ec] p-5 shadow-xl sm:rounded-none sm:p-6"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[.14em] text-[#c95029]">
+              Phone product editor
+            </p>
+            <h2 className="mt-1 text-xl font-black">
+              {product ? "Edit product" : "Add product"}
+            </h2>
+          </div>
+          <button
+            aria-label="Close editor"
+            type="button"
+            onClick={onClose}
+            className="grid h-11 w-11 place-items-center"
+          >
+            <X />
+          </button>
+        </div>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <Input
+            label="Product name"
+            value={form.name}
+            onChange={(value) => setForm({ ...form, name: value })}
+          />
+          <Input
+            label="Badge (optional)"
+            value={form.badge || ""}
+            onChange={(value) =>
+              setForm({ ...form, badge: value || undefined })
+            }
+          />
+          <Input
+            label="Selling price (₹)"
+            value={String(form.price)}
+            type="number"
+            onChange={(value) =>
+              setForm({ ...form, price: Number(value) || 0 })
+            }
+          />
+          <Input
+            label="Original price (optional)"
+            value={form.oldPrice ? String(form.oldPrice) : ""}
+            type="number"
+            onChange={(value) =>
+              setForm({ ...form, oldPrice: value ? Number(value) : undefined })
+            }
+          />
+          <Input
+            label="Stock pieces"
+            value={String(form.stock)}
+            type="number"
+            onChange={(value) =>
+              setForm({ ...form, stock: Math.max(0, Number(value) || 0) })
+            }
+          />
+          <label className="text-xs font-bold">
+            Category
+            <select
+              value={form.category}
+              onChange={(event) =>
+                setForm({ ...form, category: event.target.value })
+              }
+              className="mt-2 min-h-12 w-full border border-black/20 bg-white p-3 text-base font-normal"
+            >
+              {categories.map((category) => (
+                <option key={category.id}>{category.name}</option>
+              ))}
+              {!categories.length && <option>Uncategorised</option>}
+            </select>
+          </label>
+          <label className="text-xs font-bold">
+            Sizes (comma separated)
+            <input
+              value={form.sizes.join(", ")}
+              onChange={(event) =>
+                setForm({ ...form, sizes: splitList(event.target.value) })
+              }
+              placeholder="S, M, L, XL"
+              className="mt-2 min-h-12 w-full border border-black/20 bg-white p-3 text-base font-normal"
+            />
+          </label>
+          <label className="text-xs font-bold">
+            Colours (comma separated)
+            <input
+              value={form.colors.join(", ")}
+              onChange={(event) =>
+                setForm({ ...form, colors: splitList(event.target.value) })
+              }
+              placeholder="#111111, Black"
+              className="mt-2 min-h-12 w-full border border-black/20 bg-white p-3 text-base font-normal"
+            />
+          </label>
+          <label className="sm:col-span-2 cursor-pointer border-2 border-dashed border-[#c95029]/40 bg-[#fff7f3] p-4 text-center">
+            <input
+              onChange={chooseFile}
+              accept="image/*"
+              type="file"
+              className="sr-only"
+            />
+            <b className="block text-sm">
+              {uploading
+                ? "Uploading product photo…"
+                : "Tap to take a photo or choose from gallery"}
+            </b>
+            <span className="mt-1 block text-xs text-black/55">
+              JPG, PNG or WebP · maximum 5 MB
+            </span>
+          </label>
+          <div className="sm:col-span-2 flex items-center gap-4 border border-black/10 p-3">
+            <img
+              src={form.image}
+              alt="Product preview"
+              className="h-24 w-20 object-cover"
+            />
+            <div>
+              <b className="text-sm">Main product photo</b>
+              <p className="mt-1 text-xs leading-5 text-black/50">
+                Choose a new photo any time to replace the current cover image.
+              </p>
+            </div>
+          </div>
+          <label className="sm:col-span-2 text-xs font-bold">
+            Description
+            <textarea
+              required
+              value={form.description}
+              onChange={(event) =>
+                setForm({ ...form, description: event.target.value })
+              }
+              placeholder="Fabric, fit, wash and print details…"
+              className="mt-2 h-28 w-full border border-black/20 bg-white p-3 text-base font-normal"
+            />
+          </label>
+          <CustomDetailsEditor
+            details={details}
+            onChange={(next) => setForm({ ...form, details: next })}
+          />
+        </div>
+        {error && (
+          <p className="mt-4 text-sm font-bold text-[#c95029]">{error}</p>
+        )}
+        <button
+          disabled={uploading}
+          className="sticky bottom-0 mt-6 min-h-13 w-full bg-[#e66735] px-5 py-4 text-[10px] font-black uppercase tracking-[.12em] text-white shadow-[0_-8px_18px_rgba(245,242,236,.9)] disabled:opacity-50"
+        >
+          {uploading ? "Uploading…" : "Save product to live store"}
+        </button>
+      </form>
+    </div>
+  );
 }
 
-function CustomDetailsEditor({ details, onChange }: { details: { label: string; value: string }[]; onChange: (next: { label: string; value: string }[]) => void }) { const update = (index: number, key: "label" | "value", value: string) => onChange(details.map((detail, position) => position === index ? { ...detail, [key]: value } : detail)); return <section className="sm:col-span-2 border border-black/10 bg-white p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-xs font-bold">Custom product details</p><p className="mt-1 text-xs text-black/50">Add unlimited rows: Fabric, Fit, GSM, Print, Wash care, etc.</p></div><button type="button" onClick={() => onChange([...details, { label: "", value: "" }])} className="min-h-10 shrink-0 bg-[#191817] px-3 text-[10px] font-black uppercase tracking-[.1em] text-white">+ Add row</button></div><div className="mt-4 space-y-3">{details.map((detail, index) => <div key={index} className="grid gap-2 sm:grid-cols-[.8fr_1.2fr_auto]"><input value={detail.label} onChange={(event) => update(index, "label", event.target.value)} placeholder="Detail name" className="min-h-11 border border-black/20 p-3 text-base"/><input value={detail.value} onChange={(event) => update(index, "value", event.target.value)} placeholder="Detail value" className="min-h-11 border border-black/20 p-3 text-base"/><button type="button" aria-label="Remove detail row" onClick={() => onChange(details.filter((_, position) => position !== index))} className="min-h-11 border border-black/20 px-3 text-xs font-black text-[#c95029]">Remove</button></div>)}</div></section>; }
+function CustomDetailsEditor({
+  details,
+  onChange,
+}: {
+  details: { label: string; value: string }[];
+  onChange: (next: { label: string; value: string }[]) => void;
+}) {
+  const update = (index: number, key: "label" | "value", value: string) =>
+    onChange(
+      details.map((detail, position) =>
+        position === index ? { ...detail, [key]: value } : detail,
+      ),
+    );
+  return (
+    <section className="sm:col-span-2 border border-black/10 bg-white p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-bold">Custom product details</p>
+          <p className="mt-1 text-xs text-black/50">
+            Add unlimited rows: Fabric, Fit, GSM, Print, Wash care, etc.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => onChange([...details, { label: "", value: "" }])}
+          className="min-h-10 shrink-0 bg-[#191817] px-3 text-[10px] font-black uppercase tracking-[.1em] text-white"
+        >
+          + Add row
+        </button>
+      </div>
+      <div className="mt-4 space-y-3">
+        {details.map((detail, index) => (
+          <div
+            key={index}
+            className="grid gap-2 sm:grid-cols-[.8fr_1.2fr_auto]"
+          >
+            <input
+              value={detail.label}
+              onChange={(event) => update(index, "label", event.target.value)}
+              placeholder="Detail name"
+              className="min-h-11 border border-black/20 p-3 text-base"
+            />
+            <input
+              value={detail.value}
+              onChange={(event) => update(index, "value", event.target.value)}
+              placeholder="Detail value"
+              className="min-h-11 border border-black/20 p-3 text-base"
+            />
+            <button
+              type="button"
+              aria-label="Remove detail row"
+              onClick={() =>
+                onChange(details.filter((_, position) => position !== index))
+              }
+              className="min-h-11 border border-black/20 px-3 text-xs font-black text-[#c95029]"
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
-function CategoriesManager({ categories, onAdd, onRename, onDelete, notify }: { categories: StoreCategory[]; onAdd: (name: string) => Promise<void>; onRename: (category: StoreCategory, name: string) => Promise<void>; onDelete: (category: StoreCategory) => Promise<void>; notify: (message: string) => void }) { const [name, setName] = useState(""); const [busy, setBusy] = useState(false); const run = async (action: () => Promise<void>, success: string) => { setBusy(true); try { await action(); notify(success); } catch (error) { notify(error instanceof Error ? error.message : "Could not save category."); } finally { setBusy(false); } }; return <div className="max-w-2xl"><div className="border border-black/10 bg-white p-6"><p className="text-[10px] font-black uppercase tracking-[.15em] text-[#c95029]">Live catalogue controls</p><h2 className="mt-2 text-xl font-black">Product categories</h2><p className="mt-2 text-sm leading-6 text-black/55">Categories added here appear in the shop filters immediately. Renaming updates matching products; deleting moves them to Uncategorised.</p><form onSubmit={(event) => { event.preventDefault(); void run(async () => { await onAdd(name); setName(""); }, "Category added to the live shop."); }} className="mt-6 flex gap-3"><input required value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Oversized tees" className="min-w-0 flex-1 border border-black/20 p-3 text-sm"/><button disabled={busy} className="bg-[#e66735] px-4 text-[10px] font-black uppercase tracking-[.12em] text-white disabled:opacity-50">Add</button></form></div><div className="mt-5 space-y-3">{categories.map((category) => <CategoryRow key={category.id} category={category} busy={busy} onRename={(value) => void run(() => onRename(category, value), "Category renamed across the shop.")} onDelete={() => { if (window.confirm(`Delete ${category.name}? Matching products will become Uncategorised.`)) void run(() => onDelete(category), "Category deleted."); }}/>)}</div></div>; }
-function CategoryRow({ category, busy, onRename, onDelete }: { category: StoreCategory; busy: boolean; onRename: (name: string) => void; onDelete: () => void }) { const [name, setName] = useState(category.name); return <div className="flex gap-3 border border-black/10 bg-white p-4"><input value={name} onChange={(event) => setName(event.target.value)} className="min-w-0 flex-1 border border-black/20 p-2 text-sm"/><button disabled={busy || name.trim() === category.name} onClick={() => onRename(name)} className="text-[10px] font-black uppercase tracking-[.1em] text-[#c95029] disabled:opacity-30">Save</button><button disabled={busy} onClick={onDelete} className="text-[10px] font-black uppercase tracking-[.1em] text-black/40 disabled:opacity-30">Delete</button></div>; }
+function CategoriesManager({
+  categories,
+  onAdd,
+  onRename,
+  onDelete,
+  notify,
+}: {
+  categories: StoreCategory[];
+  onAdd: (name: string) => Promise<void>;
+  onRename: (category: StoreCategory, name: string) => Promise<void>;
+  onDelete: (category: StoreCategory) => Promise<void>;
+  notify: (message: string) => void;
+}) {
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const run = async (action: () => Promise<void>, success: string) => {
+    setBusy(true);
+    try {
+      await action();
+      notify(success);
+    } catch (error) {
+      notify(
+        error instanceof Error ? error.message : "Could not save category.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="max-w-2xl">
+      <div className="border border-black/10 bg-white p-6">
+        <p className="text-[10px] font-black uppercase tracking-[.15em] text-[#c95029]">
+          Live catalogue controls
+        </p>
+        <h2 className="mt-2 text-xl font-black">Product categories</h2>
+        <p className="mt-2 text-sm leading-6 text-black/55">
+          Categories added here appear in the shop filters immediately. Renaming
+          updates matching products; deleting moves them to Uncategorised.
+        </p>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            void run(async () => {
+              await onAdd(name);
+              setName("");
+            }, "Category added to the live shop.");
+          }}
+          className="mt-6 flex gap-3"
+        >
+          <input
+            required
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            placeholder="e.g. Oversized tees"
+            className="min-w-0 flex-1 border border-black/20 p-3 text-sm"
+          />
+          <button
+            disabled={busy}
+            className="bg-[#e66735] px-4 text-[10px] font-black uppercase tracking-[.12em] text-white disabled:opacity-50"
+          >
+            Add
+          </button>
+        </form>
+      </div>
+      <div className="mt-5 space-y-3">
+        {categories.map((category) => (
+          <CategoryRow
+            key={category.id}
+            category={category}
+            busy={busy}
+            onRename={(value) =>
+              void run(
+                () => onRename(category, value),
+                "Category renamed across the shop.",
+              )
+            }
+            onDelete={() => {
+              if (
+                window.confirm(
+                  `Delete ${category.name}? Matching products will become Uncategorised.`,
+                )
+              )
+                void run(() => onDelete(category), "Category deleted.");
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+function CategoryRow({
+  category,
+  busy,
+  onRename,
+  onDelete,
+}: {
+  category: StoreCategory;
+  busy: boolean;
+  onRename: (name: string) => void;
+  onDelete: () => void;
+}) {
+  const [name, setName] = useState(category.name);
+  return (
+    <div className="flex gap-3 border border-black/10 bg-white p-4">
+      <input
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        className="min-w-0 flex-1 border border-black/20 p-2 text-sm"
+      />
+      <button
+        disabled={busy || name.trim() === category.name}
+        onClick={() => onRename(name)}
+        className="text-[10px] font-black uppercase tracking-[.1em] text-[#c95029] disabled:opacity-30"
+      >
+        Save
+      </button>
+      <button
+        disabled={busy}
+        onClick={onDelete}
+        className="text-[10px] font-black uppercase tracking-[.1em] text-black/40 disabled:opacity-30"
+      >
+        Delete
+      </button>
+    </div>
+  );
+}
 
-function Metric({ label, value, detail }: { label: string; value: string; detail: string }) { return <div className="border border-black/10 bg-white p-5"><p className="text-[10px] font-black uppercase tracking-[.13em] text-black/45">{label}</p><p className="mt-3 text-3xl font-black">{value}</p><p className="mt-2 text-xs text-black/45">{detail}</p></div>; }
-function Info({ title, text }: { title: string; text: string }) { return <div className="bg-[#f5f2ec] p-4"><b className="text-xs">{title}</b><p className="mt-2 text-xs leading-5 text-black/55">{text}</p></div>; }
-function Input({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (value: string) => void; type?: string }) { return <label className="text-xs font-bold">{label}<input type={type} value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 w-full border border-black/20 bg-white p-3 text-sm font-normal"/></label>; }
+function Metric({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+}) {
+  return (
+    <div className="border border-black/10 bg-white p-5">
+      <p className="text-[10px] font-black uppercase tracking-[.13em] text-black/45">
+        {label}
+      </p>
+      <p className="mt-3 text-3xl font-black">{value}</p>
+      <p className="mt-2 text-xs text-black/45">{detail}</p>
+    </div>
+  );
+}
+function Info({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="bg-[#f5f2ec] p-4">
+      <b className="text-xs">{title}</b>
+      <p className="mt-2 text-xs leading-5 text-black/55">{text}</p>
+    </div>
+  );
+}
+function Input({
+  label,
+  value,
+  onChange,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: string;
+}) {
+  return (
+    <label className="text-xs font-bold">
+      {label}
+      <input
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-2 w-full border border-black/20 bg-white p-3 text-sm font-normal"
+      />
+    </label>
+  );
+}

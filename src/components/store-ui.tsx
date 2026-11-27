@@ -82,6 +82,7 @@ export function StoreHeader() {
             )}
           </div>
           <nav className="hidden items-center gap-5 text-[10px] font-black uppercase tracking-[.13em] text-white/65 lg:flex">
+            <Link href="/">Home</Link>
             <Link href="/shop">Shop all</Link>
             <Link href="/shop?category=Acid%20Wash">Acid wash</Link>
             <Link href="/shop?category=Hoodies">Hoodies</Link>
@@ -136,6 +137,9 @@ export function StoreHeader() {
             </button>
           </div>
           <nav className="mt-20 flex flex-col gap-7 text-4xl font-black uppercase tracking-[-.06em]">
+            <Link onClick={() => setMenu(false)} href="/">
+              Home
+            </Link>
             <Link onClick={() => setMenu(false)} href="/shop">
               Shop all
             </Link>
