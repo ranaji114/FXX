@@ -34,8 +34,9 @@ function AccountContent() {
   const params = useSearchParams();
   const router = useRouter();
   const { user, profile, loading, configured } = useAuth();
+  const requestedMode = params.get("mode") === "signup" ? "signup" : "login";
   const [mode, setMode] = useState<"login" | "signup">(
-    params.get("mode") === "signup" ? "signup" : "login",
+    requestedMode,
   );
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -43,6 +44,9 @@ function AccountContent() {
   useEffect(() => {
     if (!loading && hasAdminAccess(user, profile)) router.replace("/admin");
   }, [loading, user, profile, router]);
+  useEffect(() => {
+    setMode(requestedMode);
+  }, [requestedMode]);
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
