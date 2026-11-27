@@ -5,8 +5,7 @@ import { useEffect, useState } from "react";
 import { isSupabaseEnabled, supabase } from "@/lib/supabase";
 
 export type Profile = { id: string; full_name: string | null; email: string | null; phone: string | null; default_address: string | null; role: "customer" | "admin" };
-const approvedAdminEmails = ["forfunuse654@gmail.com"];
-export const hasAdminAccess = (user: User | null, profile: Profile | null) => Boolean(user && (profile?.role === "admin" || approvedAdminEmails.includes(user.email?.toLowerCase() || "")));
+export const hasAdminAccess = (user: User | null, profile: Profile | null) => Boolean(user && profile?.role === "admin");
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);

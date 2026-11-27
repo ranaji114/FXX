@@ -31,12 +31,13 @@ const read = <T,>(key: string, fallback: T): T => {
   if (typeof window === "undefined") return fallback;
   try { return JSON.parse(window.localStorage.getItem(key) || "") as T; } catch { return fallback; }
 };
-const write = <T,>(key: string, value: T) => { window.localStorage.setItem(key, JSON.stringify(value)); window.dispatchEvent(new Event("uf-change")); };
+const cache = <T,>(key: string, value: T) => { window.localStorage.setItem(key, JSON.stringify(value)); };
+const write = <T,>(key: string, value: T) => { cache(key, value); window.dispatchEvent(new Event("uf-change")); };
 
 export function useProducts() {
   const [value, setValue] = useState<Product[]>(products);
   useEffect(() => {
-    const load = async () => { const local = read(productKey, products); setValue(local); if (!supabase) return; const { data, error } = await supabase.from("products").select("*").eq("is_active", true).order("id"); if (!error && data) { const next = data.map(toProduct); write(productKey, next); setValue(next); } };
+    const load = async () => { const local = read(productKey, products); setValue(local); if (!supabase) return; const { data, error } = await supabase.from("products").select("*").eq("is_active", true).order("id"); if (!error && data) { const next = data.map(toProduct); cache(productKey, next); setValue(next); } };
     void load(); window.addEventListener("uf-change", load);
     const channel = supabase?.channel(`fxx-products-live-${crypto.randomUUID()}`).on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => void load()).subscribe();
     return () => { window.removeEventListener("uf-change", load); if (channel) void supabase?.removeChannel(channel); };
@@ -51,14 +52,14 @@ export function useCart() {
 }
 export function useOrders() {
   const [value, setValue] = useState<CustomerOrder[]>([]);
-  useEffect(() => { const load = async () => { if (!supabase) { setValue(read(orderKey, [])); return; } const { data } = await supabase.from("orders").select("*, order_items(*)").order("created_at", { ascending: false }); if (data) { const next = data.map(toOrder); write(orderKey, next); setValue(next); } }; void load(); window.addEventListener("uf-change", load); return () => window.removeEventListener("uf-change", load); }, []);
+  useEffect(() => { const load = async () => { if (!supabase) { setValue(read(orderKey, [])); return; } const { data } = await supabase.from("orders").select("*, order_items(*)").order("created_at", { ascending: false }); if (data) { const next = data.map(toOrder); cache(orderKey, next); setValue(next); } }; void load(); window.addEventListener("uf-change", load); return () => window.removeEventListener("uf-change", load); }, []);
   const save = async (next: CustomerOrder[]) => { write(orderKey, next); setValue(next); };
   return [value, save] as const;
 }
 export function useStoreSettings() {
   const [value, setValue] = useState<StoreSettings>(defaultSettings);
   useEffect(() => {
-    const load = async () => { const local = read(settingsKey, defaultSettings); setValue(local); if (!supabase) return; const { data } = await supabase.from("store_settings").select("*").eq("id", 1).single(); if (data) { const next = { brandName: String(data.brand_name), logoUrl: String(data.logo_url || ""), accent: String(data.accent || "#e66735") }; write(settingsKey, next); setValue(next); } };
+    const load = async () => { const local = read(settingsKey, defaultSettings); setValue(local); if (!supabase) return; const { data } = await supabase.from("store_settings").select("*").eq("id", 1).single(); if (data) { const next = { brandName: String(data.brand_name), logoUrl: String(data.logo_url || ""), accent: String(data.accent || "#e66735") }; cache(settingsKey, next); setValue(next); } };
     void load(); window.addEventListener("uf-change", load);
     const channel = supabase?.channel(`fxx-settings-live-${crypto.randomUUID()}`).on("postgres_changes", { event: "*", schema: "public", table: "store_settings" }, () => void load()).subscribe();
     return () => { window.removeEventListener("uf-change", load); if (channel) void supabase?.removeChannel(channel); };
@@ -69,7 +70,7 @@ export function useStoreSettings() {
 export function useCategories() {
   const [value, setValue] = useState<StoreCategory[]>(defaultCategories);
   useEffect(() => {
-    const load = async () => { const local = read(categoryKey, defaultCategories); setValue(local); if (!supabase) return; const { data, error } = await supabase.from("categories").select("*").order("sort_order"); if (!error && data) { const next = data.map(toCategory); write(categoryKey, next); setValue(next); } };
+    const load = async () => { const local = read(categoryKey, defaultCategories); setValue(local); if (!supabase) return; const { data, error } = await supabase.from("categories").select("*").order("sort_order"); if (!error && data) { const next = data.map(toCategory); cache(categoryKey, next); setValue(next); } };
     void load(); window.addEventListener("uf-change", load);
     const channel = supabase?.channel(`fxx-categories-live-${crypto.randomUUID()}`).on("postgres_changes", { event: "*", schema: "public", table: "categories" }, () => void load()).subscribe();
     return () => { window.removeEventListener("uf-change", load); if (channel) void supabase?.removeChannel(channel); };
