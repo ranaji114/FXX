@@ -66,7 +66,26 @@ export async function createDatabaseOrder(order: CustomerOrder) {
   const rows = order.items.map((item) => { const product = products.find((record) => record.id === item.productId); return { order_id: created.id, product_id: item.productId, product_name: product?.name || "Product", size: item.size, quantity: item.quantity, unit_price: product?.price || 0 }; });
   const { error: itemError } = await supabase.from("order_items").insert(rows); if (itemError) throw itemError;
 }
-export async function deleteDatabaseProduct(id: number) { if (supabase) await supabase.from("products").update({ is_active: false }).eq("id", id); }
+export async function uploadProductImage(file: File) {
+  const client = supabase;
+  if (!client) throw new Error("Supabase is not configured.");
+  if (!file.type.startsWith("image/")) throw new Error("Please upload an image file.");
+  if (file.size > 5 * 1024 * 1024) throw new Error("Image must be smaller than 5 MB.");
+  const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const path = `products/${crypto.randomUUID()}.${extension}`;
+  const { error } = await client.storage.from("product-images").upload(path, file, { contentType: file.type, upsert: false });
+  if (error) throw error;
+  return client.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+}
+export async function deleteDatabaseProduct(product: Product) {
+  const client = supabase;
+  if (!client) return;
+  const marker = "/storage/v1/object/public/product-images/";
+  const imagePath = product.image.includes(marker) ? product.image.split(marker)[1] : null;
+  const { error } = await client.from("products").delete().eq("id", product.id);
+  if (error) throw error;
+  if (imagePath) { const { error: imageError } = await client.storage.from("product-images").remove([imagePath]); if (imageError) console.warn("Product was removed but its unused image could not be removed."); }
+}
 export async function updateDatabaseOrderStatus(id: string, status: CustomerOrder["status"]) { if (supabase) await supabase.from("orders").update({ fulfilment_status: status.toLowerCase() }).eq("order_number", id); }
 
 function toProduct(row: Record<string, unknown>): Product { return { id: Number(row.id), name: String(row.name), category: row.category as Product["category"], price: Number(row.price), oldPrice: row.compare_at_price ? Number(row.compare_at_price) : undefined, image: String(row.image_url), badge: row.badge ? String(row.badge) : undefined, colors: (row.colours as string[]) || [], sizes: (row.sizes as string[]) || [], description: String(row.description || ""), stock: Number(row.stock) }; }
