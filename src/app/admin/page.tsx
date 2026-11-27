@@ -49,7 +49,8 @@ function Dashboard() {
           ...products,
           {
             ...product,
-            id: Math.max(0, ...products.map((item) => item.id)) + 1,
+            // Database ids are client-assigned; a timestamp avoids reusing an id after an old product was deleted.
+            id: Date.now(),
           },
         ];
     try {
@@ -810,18 +811,19 @@ function ProductEditor({
               className="mt-2 min-h-12 w-full border border-black/20 bg-white p-3 text-base font-normal"
             />
           </label>
-          <label className="sm:col-span-2 cursor-pointer border-2 border-dashed border-[#c95029]/40 bg-[#fff7f3] p-4 text-center">
+          <label className="sm:col-span-2 border-2 border-dashed border-[#c95029]/40 bg-[#fff7f3] p-4 text-center">
+            <b className="block text-sm">Product photo</b>
             <input
               onChange={chooseFile}
               accept="image/*"
               type="file"
-              className="sr-only"
+              className="mt-3 block w-full cursor-pointer text-sm file:mr-3 file:min-h-11 file:border-0 file:bg-[#191817] file:px-4 file:text-[10px] file:font-black file:uppercase file:tracking-[.1em] file:text-white"
             />
-            <b className="block text-sm">
+            <span className="mt-3 block text-sm font-bold">
               {uploading
                 ? "Uploading product photo…"
-                : "Tap to take a photo or choose from gallery"}
-            </b>
+                : "Tap Choose File for camera or gallery"}
+            </span>
             <span className="mt-1 block text-xs text-black/55">
               JPG, PNG or WebP · maximum 5 MB
             </span>

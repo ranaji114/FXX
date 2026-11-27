@@ -109,9 +109,9 @@ export async function deleteDatabaseProduct(product: Product) {
   if (!client) return;
   const marker = "/storage/v1/object/public/product-images/";
   const imagePath = product.image.includes(marker) ? product.image.split(marker)[1] : null;
+  if (imagePath) { const { error: imageError } = await client.storage.from("product-images").remove([imagePath]); if (imageError) throw new Error(`Could not delete the product photo: ${imageError.message}`); }
   const { error } = await client.from("products").delete().eq("id", product.id);
   if (error) throw error;
-  if (imagePath) { const { error: imageError } = await client.storage.from("product-images").remove([imagePath]); if (imageError) console.warn("Product was removed but its unused image could not be removed."); }
 }
 export async function updateDatabaseOrderStatus(id: string, status: CustomerOrder["status"]) { if (supabase) { const { error } = await supabase.from("orders").update({ fulfilment_status: status.toLowerCase() }).eq("order_number", id); if (error) throw error; } }
 
