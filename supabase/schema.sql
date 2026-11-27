@@ -20,6 +20,7 @@ create table if not exists public.products (
   image_url text not null,
   badge text,
   description text not null default '',
+  custom_details jsonb not null default '[]'::jsonb,
   sizes text[] not null default '{}',
   colours text[] not null default '{}',
   stock integer not null default 0 check (stock >= 0),
