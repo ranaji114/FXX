@@ -79,7 +79,8 @@ export async function signUp(
 }
 
 export async function signOut() {
-  if (supabase) await supabase.auth.signOut();
+  // Local sign-out clears this device immediately; a network delay must not keep the customer logged in.
+  if (supabase) await supabase.auth.signOut({ scope: "local" });
 }
 
 export async function updateProfile(
@@ -92,5 +93,8 @@ export async function updateProfile(
     .from("profiles")
     .update(profile)
     .eq("id", auth.user.id);
-  if (error) throw error;
+  if (error) {
+    if (error.code === "42703") throw new Error("Customer profile fields are not installed in Supabase yet. Run the required database update once.");
+    throw error;
+  }
 }
