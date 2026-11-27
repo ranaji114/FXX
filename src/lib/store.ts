@@ -38,7 +38,7 @@ export function useProducts() {
   useEffect(() => {
     const load = async () => { const local = read(productKey, products); setValue(local); if (!supabase) return; const { data, error } = await supabase.from("products").select("*").eq("is_active", true).order("id"); if (!error && data) { const next = data.map(toProduct); write(productKey, next); setValue(next); } };
     void load(); window.addEventListener("uf-change", load);
-    const channel = supabase?.channel("fxx-products-live").on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => void load()).subscribe();
+    const channel = supabase?.channel(`fxx-products-live-${crypto.randomUUID()}`).on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => void load()).subscribe();
     return () => { window.removeEventListener("uf-change", load); if (channel) void supabase?.removeChannel(channel); };
   }, []);
   const save = async (next: Product[]) => { const client = supabase; if (client) { const results = await Promise.all(next.map((product) => client.from("products").upsert(toRow(product)))); const failure = results.find((result) => result.error)?.error; if (failure) throw failure; } write(productKey, next); setValue(next); };
@@ -60,7 +60,7 @@ export function useStoreSettings() {
   useEffect(() => {
     const load = async () => { const local = read(settingsKey, defaultSettings); setValue(local); if (!supabase) return; const { data } = await supabase.from("store_settings").select("*").eq("id", 1).single(); if (data) { const next = { brandName: String(data.brand_name), logoUrl: String(data.logo_url || ""), accent: String(data.accent || "#e66735") }; write(settingsKey, next); setValue(next); } };
     void load(); window.addEventListener("uf-change", load);
-    const channel = supabase?.channel("fxx-settings-live").on("postgres_changes", { event: "*", schema: "public", table: "store_settings" }, () => void load()).subscribe();
+    const channel = supabase?.channel(`fxx-settings-live-${crypto.randomUUID()}`).on("postgres_changes", { event: "*", schema: "public", table: "store_settings" }, () => void load()).subscribe();
     return () => { window.removeEventListener("uf-change", load); if (channel) void supabase?.removeChannel(channel); };
   }, []);
   const save = async (next: StoreSettings) => { if (supabase) { const { error } = await supabase.from("store_settings").upsert({ id: 1, brand_name: next.brandName, logo_url: next.logoUrl, accent: next.accent }); if (error) throw error; } write(settingsKey, next); setValue(next); };
@@ -71,7 +71,7 @@ export function useCategories() {
   useEffect(() => {
     const load = async () => { const local = read(categoryKey, defaultCategories); setValue(local); if (!supabase) return; const { data, error } = await supabase.from("categories").select("*").order("sort_order"); if (!error && data) { const next = data.map(toCategory); write(categoryKey, next); setValue(next); } };
     void load(); window.addEventListener("uf-change", load);
-    const channel = supabase?.channel("fxx-categories-live").on("postgres_changes", { event: "*", schema: "public", table: "categories" }, () => void load()).subscribe();
+    const channel = supabase?.channel(`fxx-categories-live-${crypto.randomUUID()}`).on("postgres_changes", { event: "*", schema: "public", table: "categories" }, () => void load()).subscribe();
     return () => { window.removeEventListener("uf-change", load); if (channel) void supabase?.removeChannel(channel); };
   }, []);
   const add = async (name: string) => { const clean = name.trim(); if (!clean) throw new Error("Enter a category name."); const slug = clean.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""); const next = { id: Date.now(), name: clean, slug, sortOrder: value.length + 1 }; if (supabase) { const { error } = await supabase.from("categories").insert({ name: clean, slug, sort_order: next.sortOrder }); if (error) throw error; } write(categoryKey, [...value, next]); setValue([...value, next]); };
