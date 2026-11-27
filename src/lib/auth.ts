@@ -16,7 +16,8 @@ export function useAuth() {
     const loadProfile = async (nextUser: User | null) => {
       setUser(nextUser);
       if (!nextUser) { setProfile(null); setLoading(false); return; }
-      const { data } = await client.from("profiles").select("id, full_name, email, phone, default_address, role").eq("id", nextUser.id).single();
+      // Select all fields so the customer account still loads safely while a database migration is being applied.
+      const { data } = await client.from("profiles").select("*").eq("id", nextUser.id).single();
       setProfile(data as Profile | null); setLoading(false);
     };
     client.auth.getUser().then(({ data }) => loadProfile(data.user));
