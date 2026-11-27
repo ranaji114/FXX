@@ -5,9 +5,11 @@ import { FormEvent, useMemo, useState } from "react";
 import { formatPrice, products as initialProducts, type Product } from "@/lib/catalog";
 import { useOrders, useProducts, useStoreSettings, type CustomerOrder, type StoreSettings } from "@/lib/store";
 import { ArrowUpRight, Plus, X } from "@/components/icons";
+import { AdminGuard } from "@/components/auth-ui";
 
 type Tab = "Overview" | "Products" | "Orders" | "Brand & Settings";
-export default function AdminPage() {
+export default function AdminPage() { return <AdminGuard><AdminDashboard/></AdminGuard>; }
+function AdminDashboard() {
   const [tab, setTab] = useState<Tab>("Overview"); const [products, saveProducts] = useProducts(); const [orders, saveOrders] = useOrders(); const [settings, saveSettings] = useStoreSettings(); const [editing, setEditing] = useState<Product | null>(null); const [adding, setAdding] = useState(false); const [toast, setToast] = useState("");
   const revenue = orders.reduce((sum, order) => sum + order.total, 0); const lowStock = products.filter((product) => product.stock < 6).length;
   const saveProduct = (product: Product) => { saveProducts(products.some((item) => item.id === product.id) ? products.map((item) => item.id === product.id ? product : item) : [...products, product]); setEditing(null); setAdding(false); setToast("Product saved. It is now updated on the storefront."); };

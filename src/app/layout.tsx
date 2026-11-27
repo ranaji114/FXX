@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Union Fire — Streetwear",
+  title: "FXX — Streetwear",
   description: "Independent streetwear from India.",
 };
 

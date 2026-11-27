@@ -1,6 +1,6 @@
-# Union Fire Store
+# FXX Store
 
-A premium dark streetwear storefront and admin dashboard, built around the supplied Union Fire product images.
+A premium dark streetwear storefront and secure admin dashboard, built around the supplied product images.
 
 ## Start locally
 
@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-Visit `http://localhost:3000` for the storefront and `http://localhost:3000/admin` for the admin dashboard.
+Visit `http://localhost:3000` for the storefront, `http://localhost:3000/account` for customer signup/login and `http://localhost:3000/admin` for the protected admin dashboard.
 
 ## Included
 
@@ -17,15 +17,24 @@ Visit `http://localhost:3000` for the storefront and `http://localhost:3000/admi
 - Product catalogue with source images organised under `public/images/products`
 - Product details, size selection, cart and checkout-ready flow
 - Full admin dashboard UI for product edits, inventory adjustment, orders, customer summary, discounts and settings
+- Customer signup/login; checkout is unavailable until the customer is signed in
+- Supabase Auth profiles with an explicit `admin` role; database Row Level Security blocks non-admin catalogue and order administration
 - Cash-on-delivery messaging and India delivery experience
 - `supabase/schema.sql` for the live product, customer and order database
 - `.env.example` listing the Supabase, Razorpay and Shiprocket settings needed for live commerce
 
-## Before taking live orders
+## One-time live setup
 
-1. Create a Supabase project, run `supabase/schema.sql`, and copy its keys to `.env.local`.
-2. Add Razorpay production keys and webhook secret. The checkout button then needs a server route that creates and verifies Razorpay orders.
-3. Add Shiprocket credentials and create shipments after payment/COD confirmation.
-4. Add admin authentication and restrict the admin routes and database policies to your admin account.
+1. Create a Supabase project. In its SQL Editor run [schema.sql](supabase/schema.sql), then [seed.sql](supabase/seed.sql).
+2. Copy the project URL and anon key into `.env.local` locally and into Vercel environment variables for production. Never commit `.env.local` or share the service-role key.
+3. In Supabase Authentication → URL Configuration, add your Vercel production URL as the Site URL and Redirect URL.
+4. Create your own customer account through `/account`, then run this in Supabase SQL Editor, replacing the email with your own:
 
-The initial frontend catalogue is in `src/lib/catalog.ts`; this is the single source of sample product data until the Supabase connection is enabled.
+   ```sql
+   update public.profiles set role = 'admin' where email = 'YOUR_ADMIN_EMAIL@example.com';
+   ```
+
+5. Add Razorpay production keys and webhook secret. The checkout flow will need the payment route enabled before accepting card/UPI payments; COD orders already record in Supabase.
+6. Add Shiprocket credentials when you want automatic shipment creation after orders are paid/confirmed.
+
+The initial frontend catalogue is in `src/lib/catalog.ts`; the database seed publishes those products into Supabase.

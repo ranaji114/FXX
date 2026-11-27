@@ -1,0 +1,15 @@
+-- Run after schema.sql to publish the initial FXX catalogue.
+insert into public.products (id, name, category, price, compare_at_price, image_url, badge, description, sizes, colours, stock) values
+(1, 'Tiger Acid Wash Tee', 'Acid Wash', 999, 1299, '/images/products/tiger-acid-wash-tee.jpeg', 'BEST SELLER', '240 GSM loopknit cotton drop-shoulder tee with a bold tiger back print.', array['M','L','XL','XXL'], array['#7a1024'], 18),
+(2, 'Union Fire Vintage Crew', 'Sweatshirts', 1499, 1899, '/images/products/union-fire-brown-sweatshirt.jpeg', 'NEW DROP', 'Heavyweight washed crewneck with front-and-back artwork.', array['M','L','XL'], array['#6e4934'], 9),
+(3, 'Nightmarch Stone Crew', 'Sweatshirts', 1499, null, '/images/products/nightmarch-stone-sweatshirt.jpeg', null, 'Muted stone wash, relaxed fit and oversized graphic detailing.', array['M','L','XL'], array['#b7a998'], 12),
+(4, 'Dragon Crest Crew', 'Sweatshirts', 1499, null, '/images/products/dragon-green-sweatshirt.jpeg', 'LIMITED', 'Forest acid wash sweatshirt featuring a detailed dragon crest.', array['M','L','XL'], array['#234d43'], 6),
+(5, 'Cross Blue Acid Crew', 'Sweatshirts', 1499, null, '/images/products/cross-blue-sweatshirt.jpeg', null, 'Blue mineral wash crew with a large gothic cross illustration.', array['M','L','XL'], array['#294e7b'], 11),
+(6, 'FXX Wide Joggers', 'Bottoms', 1299, null, '/images/products/union-fire-joggers.jpeg', 'NEW DROP', 'Wide-leg washed joggers with a strong vertical FXX print.', array['M','L','XL'], array['#333333'], 15),
+(7, 'Crossroads Cloud Hoodie', 'Hoodies', 1799, null, '/images/products/crossroads-hoodie.jpeg', null, 'Brushed hoodie in a yellow-and-olive cloud wash with dual-side artwork.', array['M','L','XL'], array['#b5a846'], 7),
+(8, 'Through The Darkness Hoodie', 'Hoodies', 1799, null, '/images/products/through-darkness-hoodie.jpeg', 'HOT', 'Purple acid-wash hoodie with angel back graphic and heavyweight feel.', array['M','L','XL'], array['#6d4b87'], 4),
+(9, 'Chrome Blue Hoodie', 'Hoodies', 1799, null, '/images/products/chrome-blue-hoodie.jpeg', null, 'Cobalt tie-dye hoodie with oversized back print.', array['M','L','XL'], array['#2255a0'], 8),
+(10, 'Dragon Ash Hoodie', 'Hoodies', 1799, null, '/images/products/dragon-ash-hoodie.jpeg', null, 'Ash blue wash and striking dragon graphic for colder nights.', array['M','L','XL'], array['#61717a'], 10),
+(11, 'Nirvana Olive Hoodie', 'Hoodies', 1799, null, '/images/products/nirvana-olive-hoodie.jpeg', null, 'Olive camo wash hoodie with bold Nirvana angel graphic.', array['M','L','XL'], array['#596046'], 5),
+(12, 'Phantom Grey Hoodie', 'Hoodies', 1799, null, '/images/products/phantom-grey-hoodie.jpeg', 'LOW STOCK', 'Charcoal cloud wash hoodie with high-contrast phantom print.', array['M','L','XL'], array['#4b4b4b'], 3)
+on conflict (id) do update set name = excluded.name, category = excluded.category, price = excluded.price, compare_at_price = excluded.compare_at_price, image_url = excluded.image_url, badge = excluded.badge, description = excluded.description, sizes = excluded.sizes, colours = excluded.colours, stock = excluded.stock;
